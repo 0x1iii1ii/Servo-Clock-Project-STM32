@@ -27,14 +27,19 @@ This is the servo clock project that i worked on for VP.Start company.
 
 ### 3D Layout Planning and Modeling
 
-The whole clock dimension
+Clock dimension
 
 ![80cm dimen](https://user-images.githubusercontent.com/73976219/152270391-0a953df3-c69c-4078-b5cc-d541d93a0d16.PNG)
 
-Single digit dimension
+Final 3D Layout
 
-![single digit dimen 80cm](https://user-images.githubusercontent.com/73976219/152270605-0cf1ad73-a95e-4e21-97aa-92336a7dd24d.PNG)
+![Main_Assem1](https://user-images.githubusercontent.com/73976219/152271147-2c590e1f-bcf9-49a3-b3b8-e2b0c246420a.png)
 
-Servo mount with segment
+### Circuit Design and PCB
 
-![2](https://user-images.githubusercontent.com/73976219/152270771-e46afa61-4741-438c-8917-2aa95648fede.PNG)
+![Screenshot 2022-01-05 221633](https://user-images.githubusercontent.com/73976219/152271374-fc1b3818-85e1-4cf8-a1a8-70fdf87d1227.png)
+
+### Progamming
+
+Modified PCA9685 library from: **Mateusz Salamon** - [Github Link](https://github.com/lamik/Servos_PWM_STM32_HAL)
+
