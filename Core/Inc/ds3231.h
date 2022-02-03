@@ -11,8 +11,9 @@
 #include "stm32f4xx_hal.h"
 #include "i2c.h"
 
-#define DS3231_I2C					hi2c1 //Can be change to your desire I2C port.
 
+
+//#define __hi2c hi2c1
 // i2c slave address of the DS3231 chip
 #define DS3231_I2C_ADDR             0x68 << 1 // 7bit addr I2C, 1bit LSB for R/W
 
@@ -35,5 +36,6 @@ struct ts {
 void DS3231_setTime(uint8_t sec, uint8_t min, uint8_t hour, uint8_t dweek, uint8_t dmonth, uint8_t month, uint8_t year);
 void DS3231_getTime(struct ts *t);
 void DS3231_set12HourMode();
+void DS3231_IIC(I2C_HandleTypeDef *hi2c);
 
 #endif /* INC_DS3231_H_ */

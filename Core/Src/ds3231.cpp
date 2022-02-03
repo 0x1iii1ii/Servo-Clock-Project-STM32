@@ -6,6 +6,8 @@
  */
 #include "ds3231.h"
 
+I2C_HandleTypeDef *__hi2c;
+
 //converter BCD & DEC
 uint8_t decToBcd(const uint8_t val)
 {
@@ -32,14 +34,14 @@ void DS3231_setTime (uint8_t sec, uint8_t min, uint8_t hour, uint8_t dweek, uint
 	set_time[6] = decToBcd(year);
 
 	// write time to reg, start from 0x00h
-	HAL_I2C_Mem_Write(&DS3231_I2C, DS3231_I2C_ADDR, DS3231_TIME_CAL_ADDR, 1, set_time, 7, 1000);
+	HAL_I2C_Mem_Write(__hi2c, DS3231_I2C_ADDR, DS3231_TIME_CAL_ADDR, 1, set_time, 7, 1000);
 }
 //get time from reg
 void DS3231_getTime (struct ts *t)
 {
 	uint8_t get_time[7];
 	// read time from reg, start from 0x00h
-	HAL_I2C_Mem_Read(&DS3231_I2C, DS3231_I2C_ADDR, DS3231_TIME_CAL_ADDR, 1, get_time, 7, 1000);
+	HAL_I2C_Mem_Read(__hi2c, DS3231_I2C_ADDR, DS3231_TIME_CAL_ADDR, 1, get_time, 7, 1000);
 
 	t->sec = bcdToDec(get_time[0]);
 	t->min = bcdToDec(get_time[1]);
@@ -51,5 +53,9 @@ void DS3231_getTime (struct ts *t)
 }
 void DS3231_set12HourMode()
 {
-	HAL_I2C_Mem_Write(&DS3231_I2C, DS3231_I2C_ADDR, DS3231_AM_PM_ADDR, 1, (uint8_t*)DS3231_SET_12MODE, 1, 1000);
+	HAL_I2C_Mem_Write(__hi2c, DS3231_I2C_ADDR, DS3231_AM_PM_ADDR, 1, (uint8_t*)DS3231_SET_12MODE, 1, 1000);
+}
+//I2C_HandleTypeDef *_hi2c;
+void DS3231_IIC(I2C_HandleTypeDef *hi2c){
+	__hi2c = hi2c;
 }

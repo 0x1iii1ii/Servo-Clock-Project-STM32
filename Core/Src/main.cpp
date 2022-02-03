@@ -58,7 +58,7 @@ int minOFF[16]	= {450,455,435,460,445,455,435,0,440,460,430,440,465,445,435,0};
 int minON[16]	= {252,263,252,279,248,260,243,0,253,280,245,245,282,260,240,0};
 //Position values for each digit from 0 to 9 and ---- (sleep mode)
 int digits[11][7] = {{1,1,1,1,1,1,0},{0,1,1,0,0,0,0},{1,1,0,1,1,0,1},{1,1,1,1,0,0,1},{0,1,1,0,0,1,1},
-    {1,0,1,1,0,1,1},{1,0,1,1,1,1,1},{1,1,1,0,0,0,0},{1,1,1,1,1,1,1},{1,1,1,1,0,1,1},{0,0,0,0,0,0,1}};
+    {1,0,1,1,0,1,1},{1,0,1,1,1,1,1},{1,1,1,0,0,0,0},{1,1,1,1,1,1,1},{1,1,1,1,0,1,1},{0,0,0,0,0,0,0}};
 
 int swTens, prevSwTens, sw, prevSw;
 int secTens, prevSecTens, sec, prevSec;
@@ -68,6 +68,7 @@ int midOffset = 100;            //Amount by which adjacent segments to the middl
 int tempHour, tempMin, tempSec;
 bool setTimeFlag = true;
 bool sleepModeState = false;
+bool Switched = false;
 
 /* USER CODE END PV */
 
@@ -83,24 +84,13 @@ pca8586 PWM_dev1(0x41<<1, &hi2c2); //class hours digits
 //sleep mode
 void sleepMode()
 {
-	for (int i = 0; i < 6; i++)             			//Move the remaining 6 segments
-			{
-		if (digits[sleepDigits][i] == 1)                 	//Update the hour tens
-			PWM_dev1.SetPwm(i, 0, hourON[i]);
-		else
-			PWM_dev1.SetPwm(i, 0, hourOFF[i]);
-		if (digits[sleepDigits][i] == 1)               		//Update the hour units
-			PWM_dev1.SetPwm(i + 8, 0, hourON[i + 8]);
-		else
-			PWM_dev1.SetPwm(i + 8, 0, hourOFF[i + 8]);
-		if (digits[sleepDigits][i] == 1)             		//Update the minute tens
-			PWM_dev2.SetPwm(i, 0, minON[i]);
-		else
-			PWM_dev2.SetPwm(i, 0, minOFF[i]);
-		if (digits[sleepDigits][i] == 1)           				//Update the minute units
-			PWM_dev2.SetPwm(i + 8, 0, minON[i + 8]);
-		else
-			PWM_dev2.SetPwm(i + 8, 0, minOFF[i + 8]);
+	for (int j = 0; j <15; j++) {
+		PWM_dev1.SetPwm(j, 0, hourOFF[j]);
+		HAL_Delay(100);
+	}
+	for (int j = 0; j <15; j++) {
+		PWM_dev2.SetPwm(j, 0, minOFF[j]);
+		HAL_Delay(100);
 	}
 }
 //update servo segments
@@ -108,7 +98,7 @@ void sleepMode()
 //{
 //
 //}
-//Function to move the middle segements and adjacent ones out of the way
+//Function to move the middle segments and adjacent ones out of the way
 void updateMid()
 {
 	//----------------------------------------------------//
@@ -209,24 +199,20 @@ int main(void)
   //Initial PWM drivers
   PWM_dev2.Init();
   PWM_dev1.Init();
+  DS3231_IIC(&hi2c1);
   //off all digits
-//  PWM_dev1.SetPwm(6, 0, hourOFF[6]);
-//  PWM_dev1.SetPwm(14, 0, hourOFF[14]);
-//  PWM_dev2.SetPwm(6, 0, minOFF[6]);
-//  PWM_dev2.SetPwm(14, 0, minOFF[14]);
 	for (int j = 0; j <15; j++) {
 		PWM_dev1.SetPwm(j, 0, hourOFF[j]);
-		HAL_Delay(50);
+		HAL_Delay(80);
 	}
 	for (int j = 0; j <15; j++) {
 		PWM_dev2.SetPwm(j, 0, minOFF[j]);
-		HAL_Delay(50);
+		HAL_Delay(80);
 	}
 	//set times (only once)
 	//DS3231_setTime(55, 59, 23, 3, 8, 12, 21);
-	//DS3231_set12HourMode();
 	DS3231_getTime(&time);//Get time
-	char data[20];
+	//char data[20];
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -234,45 +220,43 @@ int main(void)
   while (1)
   {
 
-		DS3231_getTime(&time);//Get time
-		tempHour = time.hour; //Get the hours and save to variable
+		DS3231_getTime(&time);   //Get time
+		tempHour = time.hour; 	 //Get the hours and save to variable
+		tempMin = time.min;      //Get the minutes and save to variable
+		tempSec = time.sec;      //Get the second and save to variable
+		//switch minute to second at 11:58 for 2 minutes
+		if (tempHour == 23 && tempMin >= 58 && tempMin <= 59) Switched = true;
+		else Switched = false;
+		//let it sleep from 7:00 PM to 6 AM
+		if (tempHour >= 7 && tempHour <= 18) sleepModeState = true;
+		else sleepModeState = false;
+		//12 hour Mode
 		if (tempHour > 12)
-			tempHour = tempHour - 12; //12 hour Mode
+			tempHour = tempHour - 12;
 		if(tempHour == 0)
 			tempHour = 12;
-		//switch minute to second at 11:58 for 2 minutes
-		if (tempHour == 11 && tempMin >= 58 && tempMin <= 59)
-		{
-			swTens = secTens;
-			prevSwTens = prevSecTens;
-			sw = sec;
-			prevSw = prevSec;
-		}
-		else
-		{
-			swTens = minTens;
-			prevSwTens = prevMinTens;
-			sw = min;
-			prevSw = prevMin;
-		}
-		hourTens = tempHour / 10; //Split hours into two digits, tens and units
+		//Split hours into two digits, tens and units
+		hourTens = tempHour / 10;
 		hour = tempHour % 10;
-
-		tempMin = time.min;      //Get the minutes and save to variable
-		minTens = tempMin / 10;  //Split minutes into two digits, tens and units
+		//Split minutes into two digits, tens and units
+		minTens = tempMin / 10;
 		min = tempMin % 10;
-
-		tempSec = time.sec;      //Get the second and save to variable
-		secTens = tempSec / 10;  //Split minutes into two digits, tens and units
+		//Split minutes into two digits, tens and units
+		secTens = tempSec / 10;
 		sec = tempSec % 10;
 
-		//let it sleep at 9:00 PM
-//		if (tempHour >= 21 && tempHour <= 5)
-//		{
-//			sleepMode();
-//		}
-//		else
-//		{
+		if (Switched){
+			swTens = secTens;
+			sw = sec;
+		}
+		else{
+			swTens = minTens;
+			sw = min;
+		}
+		if (sleepModeState){
+			sleepMode();
+		}
+		else{
 			updateMid();
 			for (int i = 0; i < 6; i++)             			//Move the remaining 6 segments
 					{
@@ -293,49 +277,17 @@ int main(void)
 				else
 					PWM_dev2.SetPwm(i + 8, 0, minOFF[i + 8]);
 			}
-			//updateDisplay();
-			prevHourTens = hourTens;
-			prevHour = hour;
+		}
 			prevSwTens = swTens;
 			prevSw = sw;
-		//}
-		//Update previous displayed numerals
-
-//	  	  for(int i=0; i<7;i++)
-//	  	  {
-//	  		  PWM_dev1.SetPwm(i, 0, 460);
-//	  		  HAL_Delay(500);
-//	  		  PWM_dev1.SetPwm(i, 0, 265);
-//	  		  HAL_Delay(500);
-//
-//	  	  }
-//	  	  for(int i=8; i<15;i++)
-//	  	  {
-//	  		  PWM_dev1.SetPwm(i, 0, 460);
-//	  		  HAL_Delay(500);
-//	  		  PWM_dev1.SetPwm(i, 0, 265);
-//	  		  HAL_Delay(500);
-//	  	  }
-//	  	  for(int i=0; i<7;i++)
-//	  	  {
-//	  		  PWM_dev2.SetPwm(i, 0, 460);
-//	  		  HAL_Delay(500);
-//	  		  PWM_dev2.SetPwm(i, 0, 265);
-//	  		  HAL_Delay(500);
-//	  	  }
-//	  	  for(int i=8; i<15;i++)
-//	  	  {
-//	  		  PWM_dev2.SetPwm(i, 0, 460);
-//	  		  HAL_Delay(500);
-//	  		  PWM_dev2.SetPwm(i, 0, 265);
-//	  		  HAL_Delay(500);
-//	  	  }
-	  sprintf(data,"H10: %d\n",hourTens);
-	  HAL_UART_Transmit(&huart1, (uint8_t*)data, sizeof(data), 1000);
-	  sprintf(data,"H: %d\n",hour);
-	  HAL_UART_Transmit(&huart1, (uint8_t*)data, sizeof(data), 1000);
-	  sprintf(data,"hour: %d\n",time.hour);
-	  HAL_UART_Transmit(&huart1, (uint8_t*)data, sizeof(data), 1000);
+			prevHourTens = hourTens;
+			prevHour = hour;
+//	  sprintf(data,"H10: %d\n",hourTens);
+//	  HAL_UART_Transmit(&huart1, (uint8_t*)data, sizeof(data), 1000);
+//	  sprintf(data,"H: %d\n",hour);
+//	  HAL_UART_Transmit(&huart1, (uint8_t*)data, sizeof(data), 1000);
+//	  sprintf(data,"hour: %d\n",time.hour);
+//	  HAL_UART_Transmit(&huart1, (uint8_t*)data, sizeof(data), 1000);
 	  //HAL_UART_Transmit(&huart1, (uint8_t*)time.min, sizeof(time.min), 1000);
 	  //HAL_UART_Transmit(&huart1, (uint8_t*)time.sec, sizeof(time.sec), 1000);
 	  //HAL_Delay(500);
