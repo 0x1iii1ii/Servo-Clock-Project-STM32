@@ -11,9 +11,6 @@
 #include "stm32f4xx_hal.h"
 #include "i2c.h"
 
-
-
-//#define __hi2c hi2c1
 // i2c slave address of the DS3231 chip
 #define DS3231_I2C_ADDR             0x68 << 1 // 7bit addr I2C, 1bit LSB for R/W
 
