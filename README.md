@@ -1,5 +1,5 @@
 # Mechanical 7 segment Servo Clock on STM32
-This is the servo clock project that i worked on for VP.Start company.
+This is the servo clock project that i worked on.
 
 ![pic](https://user-images.githubusercontent.com/73976219/152266998-6e91aa42-a0c9-4c6d-88e7-9dc7350e52c3.jpg)
 
